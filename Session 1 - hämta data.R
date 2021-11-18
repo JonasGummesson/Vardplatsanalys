@@ -12,7 +12,7 @@ connection <- DBI::dbConnect(odbc::odbc(),
                              Trusted_Connection = "True", 
                              Encoding = "windows-1252")
 
-sql_vårdepisod = "
+sql_vårdepisod <- "
 SELECT [VårdepisodID]
       ,[TidpunktStart]
       ,[TidpunktSlut]
@@ -40,6 +40,8 @@ SELECT [VårdepisodID]
 grunddata_vårdepisod <- dbGetQuery(connection, sql_vårdepisod) %>% 
   as_tibble()
 
+
+
 # se typer och exempel på alla kolumner i dataset
 str(grunddata_vårdepisod)
 
@@ -60,8 +62,10 @@ grunddata_vårdepisod %>%
 
 
 # skapa nytt dataset 
-nytt_dataset <-  grunddata_vårdepisod %>%
-  select(PatientID, TidpunktStart, TidpunktSlut)
+nytt_dataset <- 
+    grunddata_vårdepisod %>%
+    select(PatientID, TidpunktStart, TidpunktSlut)
+  
 
 # filtrera ut rader, en patient med alla dess vårdepisoder
 grunddata_vårdepisod %>%
@@ -69,10 +73,11 @@ grunddata_vårdepisod %>%
 
 # skapa datum-variabler från tid och datum, as.Date konverterar från POSIX till Date
 grunddata_vårdepisod %>%
+  select(PatientID, TidpunktStart, TidpunktSlut) %>%
+  filter(PatientID == "9221774653000355855") %>%
   mutate(DatumStart = as.Date(TidpunktStart),
          DatumSlut = as.Date(TidpunktSlut)) %>%
-  filter(PatientID == "9221774653000355855") %>%
-  select(PatientID, DatumStart, DatumSlut, TidpunktStart, TidpunktSlut)
+  select(PatientID, DatumStart, DatumSlut)
 
 
 # beräkna vårddagar
@@ -90,7 +95,7 @@ vårdepisod <- grunddata_vårdepisod %>%
   mutate(PatientID = as.character(PatientID))%>%
   mutate(DatumStart = as.Date(TidpunktStart),
          DatumSlut = as.Date(TidpunktSlut)) %>%
-  #filter(PatientID == "9221774653000355855" | PatientID == "-4534178196391246530") %>%
+  filter(PatientID == "9221774653000355855" | PatientID == "-4534178196391246530") %>%
   select(PatientID, DatumStart, DatumSlut) %>%
   mutate(Vårddagar = as.integer(difftime(DatumSlut, DatumStart, units = "days"))) %>%
   group_by(PatientID) %>%
